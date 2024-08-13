@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: spring-boot-api-applicationset
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: in-cluster
+            environment: dev
+            namespace: dev-namespace
+            valuesFile: values/dev/values.yaml
+          - cluster: in-cluster
+            environment: prod
+            namespace: prod-namespace
+            valuesFile: values/prod/values.yaml
+  template:
+    metadata:
+      name: '{{environment}}-spring-boot-api'
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/drapek007/Spring-Boot-Api-Helm
+        targetRevision: main
+        chart: app  # Name of the Helm chart directory
+        helm:
+          valueFiles:
+            - '{{valuesFile}}'
+      destination:
+        server: '{{cluster}}'
+        namespace: '{{namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+      # Creates the namespace if it does not exist
+      namespaceResource:
+        createNamespace: true
+
